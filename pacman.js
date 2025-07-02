@@ -284,6 +284,20 @@ window.onload = function(){
         highScore = parseInt(savedHighScore);
     }
 
+    document.getElementById("up").addEventListener("click", () => {
+        pacman.updateDirection('U');
+    });
+    document.getElementById("down").addEventListener("click", () => {
+        pacman.updateDirection('D');
+    });
+    document.getElementById("left").addEventListener("click", () => {
+        pacman.updateDirection('L');
+    });
+    document.getElementById("right").addEventListener("click", () => {
+        pacman.updateDirection('R');
+    });
+
+
     loadImages();
     loadMap();
     setInterval(animatePacmanMouth, 200);
