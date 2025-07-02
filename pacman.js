@@ -273,6 +273,19 @@ function animatePacmanMouth(){
     }
 }
 
+function scaleCanvas() {
+    const container = document.getElementById("canvas-container");
+    const scaleX = window.innerWidth / boardWidth;
+    const scaleY = window.innerHeight / boardHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    container.style.transform = `scale(${scale})`;
+}
+
+window.addEventListener("resize", scaleCanvas);
+window.addEventListener("load", scaleCanvas);
+
+
 window.onload = function(){
     board = document.getElementById("board");
     board.height = boardHeight;
