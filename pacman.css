@@ -44,6 +44,7 @@ body {
 }
 
 #mobile-controls {
+  display: none;
   position: fixed;
   bottom: 20px;
   left: 50%;
@@ -62,4 +63,12 @@ body {
   background-color: #ffcc00;
   color: black;
   font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Show mobile controls only on small screens */
+@media (max-width: 768px) {
+    #mobile-controls {
+        display: block;
+    }
 }
