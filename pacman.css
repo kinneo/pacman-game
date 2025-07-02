@@ -2,7 +2,7 @@
     text-align: center;
 } */
 
-body {
+/* body {
     margin: 0;
     padding: 0;
     background-color: black;
@@ -16,6 +16,26 @@ body {
 #canvas-container {
     position: relative;
     transform-origin: top left;
+} */
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: black;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#canvas-container {
+    transform-origin: top left;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%; /* this centers the container */
 }
 
 
