@@ -583,9 +583,9 @@ function movePacman(e){
     //     return;
     // }
 
-    if(e.code === "KeyO"){
-        foods.clear();
-    }
+    // if(e.code === "KeyO"){
+    //     foods.clear();
+    // }
 
     if(gameOver){
         currentTileMap = tileMaps[getRandomMapIndex()];
