@@ -298,16 +298,20 @@ window.onload = function(){
     }
 
     document.getElementById("up").addEventListener("click", () => {
-        pacman.updateDirection('U');
+        //pacman.updateDirection('U');
+        pacman.nextDirection = 'U'; 
     });
     document.getElementById("down").addEventListener("click", () => {
-        pacman.updateDirection('D');
+        //pacman.updateDirection('D');
+        pacman.nextDirection = 'D'; 
     });
     document.getElementById("left").addEventListener("click", () => {
-        pacman.updateDirection('L');
+        //pacman.updateDirection('L');
+        pacman.nextDirection = 'L'; 
     });
     document.getElementById("right").addEventListener("click", () => {
-        pacman.updateDirection('R');
+        //pacman.updateDirection('R');
+        pacman.nextDirection = 'R'; 
     });
 
     document.getElementById("restart").addEventListener("click", () => {
@@ -551,17 +555,49 @@ function pickDirection(validDirs, currentDir){
     return choices[Math.floor(Math.random() * choices.length)];
 }
 
+function tryDirection(block, direction) {
+    let dx = 0, dy = 0;
+    if (direction === 'U') dy = -tileSize;
+    else if (direction === 'D') dy = tileSize;
+    else if (direction === 'L') dx = -tileSize;
+    else if (direction === 'R') dx = tileSize;
+
+    const temp = {...block, x: block.x + dx, y: block.y + dy};
+    for (let wall of walls.values()) {
+        if (collision(temp, wall)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function move(){
+
+    if (isAtTileCenter(pacman)) {
+        if (pacman.nextDirection) {
+            const attempted = tryDirection(pacman, pacman.nextDirection);
+            if (attempted) {
+                pacman.direction = pacman.nextDirection;
+                pacman.updateVelocity();
+            }
+        }
+
+        const currentValid = tryDirection(pacman, pacman.direction);
+        if (!currentValid) {
+            pacman.velocityX = 0;
+            pacman.velocityY = 0;
+        }
+    }
     pacman.x += pacman.velocityX;
     pacman.y += pacman.velocityY;
 
-    for (let wall of walls.values()){
-        if(collision(pacman,wall)){
-            pacman.x -= pacman.velocityX;
-            pacman.y -= pacman.velocityY;
-            break;
-        }
-    }
+    // for (let wall of walls.values()){
+    //     if(collision(pacman,wall)){
+    //         pacman.x -= pacman.velocityX;
+    //         pacman.y -= pacman.velocityY;
+    //         break;
+    //     }
+    // }
 
     for (let ghost of ghosts.values()){
 
@@ -646,16 +682,20 @@ function movePacman(e){
         return;
     }
     if (e.code == "ArrowUp" || e.code == "KeyW") {
-        pacman.updateDirection('U'); 
+        //pacman.updateDirection('U'); 
+        pacman.nextDirection = 'U'; 
     }
     else if (e.code == "ArrowDown" || e.code == "KeyS") {
-        pacman.updateDirection('D'); 
+        //pacman.updateDirection('D'); 
+        pacman.nextDirection = 'D'; 
     }
     else if (e.code == "ArrowLeft" || e.code == "KeyA") {
-        pacman.updateDirection('L'); 
+        //pacman.updateDirection('L'); 
+        pacman.nextDirection = 'L'; 
     }
     else if (e.code == "ArrowRight" || e.code == "KeyD") {
-        pacman.updateDirection('R'); 
+        //pacman.updateDirection('R'); 
+        pacman.nextDirection = 'R'; 
     }
 
     //update pacman images
@@ -705,6 +745,8 @@ class Block{
         this.direction = 'R';
         this.velocityX = 0;
         this.velocityY = 0;
+
+        this.nextDirection = null; //
     }
 
     updateDirection(direction){
