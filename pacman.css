@@ -50,17 +50,21 @@ body {
 }
 
 #restart {
-  width: 120px;
-  height: 40px;
-  margin-top: 10px;
-  font-size: 18px;
+  position: fixed;
+  bottom: 10px;
+  right: 10px; /* place at bottom right corner */
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
   border-radius: 8px;
   border: none;
   background-color: #ffcc00;
   color: black;
   font-weight: bold;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  z-index: 999;
 }
+
 
 
 /* Show mobile controls only on small screens */
