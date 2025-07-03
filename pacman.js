@@ -389,19 +389,19 @@ function loadMap(){
                 walls.add(wall);  
             }
             else if (tileMapChar == 'b') { //blue ghost
-                const ghost = new Block(blueGhostImg, x, y, tileSize, tileSize);
+                const ghost = new Block(blueGhostImg, x, y, tileSize, tileSize, true);
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'o') { //orange ghost
-                const ghost = new Block(orangeGhostImg, x, y, tileSize, tileSize);
+                const ghost = new Block(orangeGhostImg, x, y, tileSize, tileSize, true);
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'p') { //pink ghost
-                const ghost = new Block(pinkGhostImg, x, y, tileSize, tileSize);
+                const ghost = new Block(pinkGhostImg, x, y, tileSize, tileSize, true);
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'r') { //red ghost
-                const ghost = new Block(redGhostImg, x, y, tileSize, tileSize);
+                const ghost = new Block(redGhostImg, x, y, tileSize, tileSize, true);
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'P') { //pacman
@@ -736,7 +736,7 @@ function resetPositions(){
 }
 
 class Block{
-    constructor(image,x,y,width,height){
+    constructor(image,x,y,width,height, isGhost = false){
         this.image = image;
         this.x = x;
         this.y = y;
@@ -750,7 +750,9 @@ class Block{
         this.velocityX = 0;
         this.velocityY = 0;
 
-        this.nextDirection = null; //
+        this.nextDirection = null; 
+
+        this.isGhost = isGhost;
     }
 
     updateDirection(direction){
@@ -772,20 +774,22 @@ class Block{
     }
 
     updateVelocity() {
+
+        const speed = this.isGhost ? tileSize/8 : tileSize/4;
         if (this.direction == 'U') {
             this.velocityX = 0;
-            this.velocityY = -tileSize/4;
+            this.velocityY = -speed;
         }
         else if (this.direction == 'D') {
             this.velocityX = 0;
-            this.velocityY = tileSize/4;
+            this.velocityY = speed;
         }
         else if (this.direction == 'L') {
-            this.velocityX = -tileSize/4;
+            this.velocityX = -speed;
             this.velocityY = 0;
         }
         else if (this.direction == 'R') {
-            this.velocityX = tileSize/4;
+            this.velocityX = speed;
             this.velocityY = 0;
         }
     }
