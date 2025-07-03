@@ -310,6 +310,20 @@ window.onload = function(){
         pacman.updateDirection('R');
     });
 
+    document.getElementById("restart").addEventListener("click", () => {
+        if (gameOver) {
+            currentTileMap = tileMaps[getRandomMapIndex()];
+            loadMap();
+            resetPositions();
+            lives = 3;
+            score = 0;
+            level = 1;
+            gameOver = false;
+            document.getElementById("restart").style.display = "none";
+            clearTimeout(updateLoop);
+            update();
+        }
+    });
 
     loadImages();
     loadMap();
@@ -441,6 +455,11 @@ function draw(){
             localStorage.setItem("highScore", highScore);
         }
         context.fillText("Game Over, your score was: " + String(score) + "   Press any key to restart game.", tileSize/2, tileSize/1.7);
+
+        // show restart button on mobile
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            document.getElementById("restart").style.display = "block";
+        }
     }
     else {
         context.fillText("Level: " + String(level) + " Lives: x" + String(lives), tileSize/2, tileSize/1.7);
