@@ -278,8 +278,8 @@ function scaleCanvas() {
     const scaleX = window.innerWidth / boardWidth;
     const scaleY = window.innerHeight / boardHeight;
     const scale = Math.min(scaleX, scaleY);
-
-    container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    container.style.transform = `scale(${scale})`;
+    //container.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
 window.addEventListener("resize", scaleCanvas);

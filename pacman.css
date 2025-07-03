@@ -10,12 +10,24 @@ body {
     align-items: center;
 }
 
-#canvas-container {
+/* #canvas-container {
     transform-origin: top left;
     position: absolute;
     left: 50%;
     top: 50%;
+} */
+
+#canvas-container {
+    transform-origin: top left;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
+
 
 #board{
     background-color: black;
