@@ -298,19 +298,33 @@ window.onload = function(){
     }
 
     document.getElementById("up").addEventListener("click", () => {
-        const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
-        if (!inTunnel) pacman.nextDirection = 'U';
+        movePacman({ code: "ArrowUp" });
     });
     document.getElementById("down").addEventListener("click", () => {
-        const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
-        if (!inTunnel) pacman.nextDirection = 'D';
+        movePacman({ code: "ArrowDown" });
     });
     document.getElementById("left").addEventListener("click", () => {
-        pacman.nextDirection = 'L'; 
+        movePacman({ code: "ArrowLeft" });
     });
     document.getElementById("right").addEventListener("click", () => {
-        pacman.nextDirection = 'R'; 
+        movePacman({ code: "ArrowRight" });
     });
+
+
+    // document.getElementById("up").addEventListener("click", () => {
+    //     const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
+    //     if (!inTunnel) pacman.nextDirection = 'U';
+    // });
+    // document.getElementById("down").addEventListener("click", () => {
+    //     const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
+    //     if (!inTunnel) pacman.nextDirection = 'D';
+    // });
+    // document.getElementById("left").addEventListener("click", () => {
+    //     pacman.nextDirection = 'L'; 
+    // });
+    // document.getElementById("right").addEventListener("click", () => {
+    //     pacman.nextDirection = 'R'; 
+    // });
 
     document.getElementById("restart").addEventListener("click", () => {
         if (gameOver) {
@@ -672,9 +686,7 @@ function movePacman(e){
         return;
     }
 
-    const inTunnel = (
-        pacman.x < 0 || pacman.x + pacman.width > boardWidth
-    );
+    const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
 
     // prevent users from going up down when in tunnel
     if (inTunnel) {
