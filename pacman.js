@@ -473,13 +473,13 @@ function applyWrapAround(block){
     const row = Math.floor(block.y /tileSize);
 
     // left edge
-    if (block.x + block.width <= 0 && block.velocityX < 0 && currentTileMap[row][columnCount - 1] !== 'X') {
+    if (block.x + block.width < 0 && block.velocityX < 0 && currentTileMap[row][columnCount - 1] !== 'X') {
         wrapWithDelay(block, (columnCount) * tileSize, block.y)
         return;
     }
 
     // right edge
-    if (block.x >= boardWidth && block.velocityX > 0 && currentTileMap[row][0] !== 'X') {
+    if (block.x > boardWidth && block.velocityX > 0 && currentTileMap[row][0] !== 'X') {
         wrapWithDelay(block, -block.width, block.y);
         return;
     }
@@ -755,48 +755,21 @@ class Block{
 
     updateDirection(direction){
         const prevDirection = this.direction;
-        const prevVelocityX = this.velocityX;
-        const prevVelocityY = this.velocityY;
-
         this.direction = direction;
         this.updateVelocity();
-
-        // Predict movement, check if new direction immediately causes wall collision
-        const predictedX = this.x + this.velocityX;
-        const predictedY = this.y + this.velocityY;
-        const temp = { ...this, x: predictedX, y: predictedY };
+        this.x += this.velocityX;
+        this.y += this.velocityY;
 
         for(let wall of walls.values()){
-            if(collision(temp, wall)){
-                // Revert direction and velocity if the new move is blocked
+            if(collision(this,wall)){
+                this.x -= this.velocityX;
+                this.y -= this.velocityY;
                 this.direction = prevDirection;
-                this.velocityX = prevVelocityX;
-                this.velocityY = prevVelocityY;
+                this.updateVelocity();
                 return;
             }
         }
-
-        // ✅ Do NOT update position here — let move() handle actual movement
     }
-
-
-    // updateDirection(direction){
-    //     const prevDirection = this.direction;
-    //     this.direction = direction;
-    //     this.updateVelocity();
-    //     this.x += this.velocityX;
-    //     this.y += this.velocityY;
-
-    //     for(let wall of walls.values()){
-    //         if(collision(this,wall)){
-    //             this.x -= this.velocityX;
-    //             this.y -= this.velocityY;
-    //             this.direction = prevDirection;
-    //             this.updateVelocity();
-    //             return;
-    //         }
-    //     }
-    // }
 
     updateVelocity() {
         if (this.direction == 'U') {
