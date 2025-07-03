@@ -585,6 +585,15 @@ function tryDirection(block, direction) {
 
 function move(){
 
+    const inTunnel = (
+        pacman.x < tileSize ||
+        pacman.x + pacman.width > boardWidth - tileSize
+    );
+
+    if (inTunnel && (pacman.nextDirection === 'U' || pacman.nextDirection === 'D')) {
+        pacman.nextDirection = null;
+    }
+
     if (isAtTileCenter(pacman)) {
         if (pacman.nextDirection) {
             const attempted = tryDirection(pacman, pacman.nextDirection);
@@ -686,13 +695,14 @@ function movePacman(e){
         return;
     }
 
-    const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
+    const inTunnel = (
+        pacman.x < tileSize || // approaching or in left tunnel
+        pacman.x + pacman.width > boardWidth - tileSize // approaching or in right tunnel
+    );
 
     // prevent users from going up down when in tunnel
-    if (inTunnel) {
-        if (pacman.nextDirection === 'U' || pacman.nextDirection === 'D') {
-            pacman.nextDirection = null;
-        }
+    if (inTunnel && (pacman.nextDirection === 'U' || pacman.nextDirection === 'D')) {
+        pacman.nextDirection = null;
     }
 
     if (e.code == "ArrowUp" || e.code == "KeyW") {
