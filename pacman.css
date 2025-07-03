@@ -41,6 +41,9 @@ body {
   transform: translateX(-50%);
   text-align: center;
   z-index: 999;
+  width: 250px; /* Enough space for arrow buttons + restart */
+  height: 120px;
+  position: relative; /* So children can be absolutely positioned */
 }
 
 #mobile-controls button {
@@ -57,9 +60,14 @@ body {
 }
 
 #restart {
-  width: 120px;
+  /* width: 120px;
   height: 40px;
-  margin-top: 10px;
+  margin-top: 10px; */
+  position: absolute;
+  top: 60px;        /* Same vertical level as left/down/right */
+  left: 200px;      /* To the right of the → button */
+  width: 40px;
+  height: 40px;
   font-size: 18px;
   border-radius: 8px;
   border: none;
