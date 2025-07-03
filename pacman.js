@@ -683,7 +683,8 @@ function move(){
     const halfwayOutRight = pacman.x < boardWidth && pacman.x + pacman.width > boardWidth;
 
     if ((halfwayOutLeft || halfwayOutRight)) {
-        return; // Skip applyWrapAround if halfway through tunnel
+        applyWrapAround(pacman);
+        //return; // Skip applyWrapAround if halfway through tunnel
     }
 
     applyWrapAround(pacman); // could it be how i call this function? isit being continuosly called? shld i add a condtion b4 calling this fn instead?
