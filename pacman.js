@@ -488,17 +488,17 @@ function applyWrapAround(block){
     const col = Math.floor(block.x /tileSize);
     const row = Math.floor(block.y /tileSize);
 
-    // halfway out of left edge, initial moving left, but user change dir to right
-    if(block.x < 0 && block.x + block.width > 0 && block.velocityX > 0 && currentTileMap[row][columnCount - 1] !== 'X'){
-        // continue moving right, no wrap around, break out of this fn
-        return;
-    }
+    // // halfway out of left edge, initial moving left, but user change dir to right
+    // if(block.x < 0 && block.x + block.width > 0 && block.velocityX > 0 && currentTileMap[row][columnCount - 1] !== 'X'){
+    //     // continue moving right, no wrap around, break out of this fn
+    //     return;
+    // }
 
-    // halfway out of right edge, initial moving right, but user change dir to left
-    if (block.x + block.width > boardWidth && block.x < boardWidth && block.velocityX < 0 && currentTileMap[row][0] !== 'X') {
-        // continue moving left, no wrap around, break out of this fn
-        return;
-    }
+    // // halfway out of right edge, initial moving right, but user change dir to left
+    // if (block.x + block.width > boardWidth && block.x < boardWidth && block.velocityX < 0 && currentTileMap[row][0] !== 'X') {
+    //     // continue moving left, no wrap around, break out of this fn
+    //     return;
+    // }
 
     // left edge
     if (block.x + block.width <= 0 && block.velocityX < 0 && currentTileMap[row][columnCount - 1] !== 'X') {
@@ -679,7 +679,14 @@ function move(){
         resetPositions();
     }
 
-    applyWrapAround(pacman);
+    const halfwayOutLeft = pacman.x < 0 && pacman.x + pacman.width > 0;
+    const halfwayOutRight = pacman.x < boardWidth && pacman.x + pacman.width > boardWidth;
+
+    if ((halfwayOutLeft || halfwayOutRight)) {
+        return; // Skip applyWrapAround if halfway through tunnel
+    }
+
+    applyWrapAround(pacman); // could it be how i call this function? isit being continuosly called? shld i add a condtion b4 calling this fn instead?
 }
 
 function movePacman(e){
