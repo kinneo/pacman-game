@@ -755,21 +755,48 @@ class Block{
 
     updateDirection(direction){
         const prevDirection = this.direction;
+        const prevVelocityX = this.velocityX;
+        const prevVelocityY = this.velocityY;
+
         this.direction = direction;
         this.updateVelocity();
-        this.x += this.velocityX;
-        this.y += this.velocityY;
+
+        // Predict movement, check if new direction immediately causes wall collision
+        const predictedX = this.x + this.velocityX;
+        const predictedY = this.y + this.velocityY;
+        const temp = { ...this, x: predictedX, y: predictedY };
 
         for(let wall of walls.values()){
-            if(collision(this,wall)){
-                this.x -= this.velocityX;
-                this.y -= this.velocityY;
+            if(collision(temp, wall)){
+                // Revert direction and velocity if the new move is blocked
                 this.direction = prevDirection;
-                this.updateVelocity();
+                this.velocityX = prevVelocityX;
+                this.velocityY = prevVelocityY;
                 return;
             }
         }
+
+        // ✅ Do NOT update position here — let move() handle actual movement
     }
+
+
+    // updateDirection(direction){
+    //     const prevDirection = this.direction;
+    //     this.direction = direction;
+    //     this.updateVelocity();
+    //     this.x += this.velocityX;
+    //     this.y += this.velocityY;
+
+    //     for(let wall of walls.values()){
+    //         if(collision(this,wall)){
+    //             this.x -= this.velocityX;
+    //             this.y -= this.velocityY;
+    //             this.direction = prevDirection;
+    //             this.updateVelocity();
+    //             return;
+    //         }
+    //     }
+    // }
 
     updateVelocity() {
         if (this.direction == 'U') {
