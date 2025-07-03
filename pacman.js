@@ -136,7 +136,7 @@ const tileMap5 = [
     "X  X           X  X",
     "XX X X XXrXX X X XX",
     "OX   X XbpoX X   XO",
-    "OX  XX XXXXX XX  XO",
+    "OX XXX XXXXX XXX XO",
     "OX               XO",
     "XX XXXXX X XXXXX XX",
     "O  X     X     X  O",
@@ -298,19 +298,17 @@ window.onload = function(){
     }
 
     document.getElementById("up").addEventListener("click", () => {
-        //pacman.updateDirection('U');
-        pacman.nextDirection = 'U'; 
+        const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
+        if (!inTunnel) pacman.nextDirection = 'U';
     });
     document.getElementById("down").addEventListener("click", () => {
-        //pacman.updateDirection('D');
-        pacman.nextDirection = 'D'; 
+        const inTunnel = (pacman.x < 0 || pacman.x + pacman.width > boardWidth);
+        if (!inTunnel) pacman.nextDirection = 'D';
     });
     document.getElementById("left").addEventListener("click", () => {
-        //pacman.updateDirection('L');
         pacman.nextDirection = 'L'; 
     });
     document.getElementById("right").addEventListener("click", () => {
-        //pacman.updateDirection('R');
         pacman.nextDirection = 'R'; 
     });
 
@@ -591,14 +589,6 @@ function move(){
     pacman.x += pacman.velocityX;
     pacman.y += pacman.velocityY;
 
-    // for (let wall of walls.values()){
-    //     if(collision(pacman,wall)){
-    //         pacman.x -= pacman.velocityX;
-    //         pacman.y -= pacman.velocityY;
-    //         break;
-    //     }
-    // }
-
     for (let ghost of ghosts.values()){
 
         applyWrapAround(ghost);
@@ -681,20 +671,28 @@ function movePacman(e){
         update();
         return;
     }
+
+    const inTunnel = (
+        pacman.x < 0 || pacman.x + pacman.width > boardWidth
+    );
+
+    // prevent users from going up down when in tunnel
+    if (inTunnel) {
+        if (pacman.nextDirection === 'U' || pacman.nextDirection === 'D') {
+            pacman.nextDirection = null;
+        }
+    }
+
     if (e.code == "ArrowUp" || e.code == "KeyW") {
-        //pacman.updateDirection('U'); 
-        pacman.nextDirection = 'U'; 
+        if (!inTunnel) pacman.nextDirection = 'U'; 
     }
     else if (e.code == "ArrowDown" || e.code == "KeyS") {
-        //pacman.updateDirection('D'); 
-        pacman.nextDirection = 'D'; 
+        if (!inTunnel) pacman.nextDirection = 'D'; 
     }
     else if (e.code == "ArrowLeft" || e.code == "KeyA") {
-        //pacman.updateDirection('L'); 
         pacman.nextDirection = 'L'; 
     }
     else if (e.code == "ArrowRight" || e.code == "KeyD") {
-        //pacman.updateDirection('R'); 
         pacman.nextDirection = 'R'; 
     }
 

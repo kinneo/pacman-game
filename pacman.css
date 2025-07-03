@@ -21,7 +21,6 @@ body {
     justify-content: center;
 }
 
-
 #board{
     background-color: black;
 }
@@ -64,8 +63,6 @@ body {
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   z-index: 999;
 }
-
-
 
 /* Show mobile controls only on small screens */
 @media (max-width: 768px) {
