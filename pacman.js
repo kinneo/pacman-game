@@ -571,7 +571,13 @@ function tryDirection(block, direction) {
 }
 
 function move(){
+    pacmanMovement();
+    ghostMovement();
+    foodAndLevel();
+    applyWrapAround(pacman);
+}
 
+function pacmanMovement(){
     const inTunnel = (
         pacman.x < tileSize ||
         pacman.x + pacman.width > boardWidth - tileSize
@@ -598,7 +604,9 @@ function move(){
     }
     pacman.x += pacman.velocityX;
     pacman.y += pacman.velocityY;
+}
 
+function ghostMovement(){
     for (let ghost of ghosts.values()){
 
         applyWrapAround(ghost);
@@ -636,7 +644,9 @@ function move(){
             resetPositions();
         }
     }
+}
 
+function foodAndLevel(){
     let foodEaten = null;
     for (let food of foods.values()){
         if(collision(pacman, food)){
@@ -651,7 +661,7 @@ function move(){
         levelUp();
     }
 
-    applyWrapAround(pacman); 
+    applyWrapAround(pacman);
 }
 
 function levelUp(){
@@ -683,15 +693,15 @@ function getLevelUpMapIndex() {
 
 function movePacman(e){
     // testing purposes
-    // if (e.code === "KeyP") {
-    //     gameOver = true;
-    //     draw(); // update screen with Game Over text
-    //     return;
-    // }
+    if (e.code === "KeyP") {
+        gameOver = true;
+        draw(); // update screen with Game Over text
+        return;
+    }
 
-    // if(e.code === "KeyO"){
-    //     foods.clear();
-    // }
+    if(e.code === "KeyO"){
+        foods.clear();
+    }
 
     if(gameOver){
         currentTileMap = tileMaps[getRandomMapIndex()];
@@ -762,6 +772,24 @@ function resetPositions(){
     }
 }
 
+function getGhostSpeed(level) {
+    // if (level >= 7) return tileSize / 2; 
+    // if (level >= 4) return tileSize / 4; 
+    return tileSize / 8; 
+}
+
+// function getGhostSpeed(level) {
+//     const baseSpeed = tileSize / 8; // starting speed
+//     const speedMultiplier = 1.05 ** (level - 1); // exponential growth
+//     return baseSpeed * speedMultiplier;
+// }
+
+// function getGhostSpeed(level) {
+//     const baseSpeed = tileSize / 8;       // starting speed
+//     const increment = tileSize / 80;      // how much to increase per level (adjust as needed)
+//     return baseSpeed; // + (level - 1) * increment;
+// }
+
 class Block{
     constructor(image,x,y,width,height, isGhost = false){
         this.image = image;
@@ -802,7 +830,8 @@ class Block{
 
     updateVelocity() {
 
-        const speed = this.isGhost ? tileSize/8 : tileSize/4;
+        const speed = this.isGhost ? getGhostSpeed(level) : tileSize/4;
+
         if (this.direction == 'U') {
             this.velocityX = 0;
             this.velocityY = -speed;
