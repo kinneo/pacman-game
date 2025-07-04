@@ -248,7 +248,6 @@ const tileMap9 = [
 const directions = ['U', 'D', 'L', 'R'];
 const tileMaps = [tileMap1, tileMap2, tileMap3, tileMap4, tileMap5, tileMap6, tileMap7, tileMap8, tileMap9]; 
 let previousMapIndex = -1;
-//let currentTileMap = tileMaps[getRandomMapIndex()];
 let highScore = 0;
 let score = 0;
 let lives = 3;
@@ -284,7 +283,6 @@ function scaleCanvas() {
     const scaleY = window.innerHeight / boardHeight;
     const scale = Math.min(scaleX, scaleY);
     container.style.transform = `scale(${scale})`;
-    //container.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
 window.addEventListener("resize", scaleCanvas);
