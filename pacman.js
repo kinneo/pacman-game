@@ -248,7 +248,7 @@ const tileMap9 = [
 const directions = ['U', 'D', 'L', 'R'];
 const tileMaps = [tileMap1, tileMap2, tileMap3, tileMap4, tileMap5, tileMap6, tileMap7, tileMap8, tileMap9]; 
 let previousMapIndex = -1;
-let currentTileMap = tileMaps[getRandomMapIndex()];
+//let currentTileMap = tileMaps[getRandomMapIndex()];
 let highScore = 0;
 let score = 0;
 let lives = 3;
@@ -256,6 +256,11 @@ let level = 1;
 let gameOver = false;
 let updateLoop = null;
 let pacmanMouthOpen = true;
+let usedMapIndices = new Set(); // used so that when users level up, they will never see the same map twice
+
+const initialIndex = getRandomMapIndex();
+usedMapIndices.add(initialIndex);
+let currentTileMap = tileMaps[initialIndex];
 
 function animatePacmanMouth(){
     if(!pacman) return;
@@ -645,14 +650,38 @@ function move(){
     foods.delete(foodEaten);
 
     if(foods.size == 0){ 
-        level += 1;
-        lives += 1;
-        loadMap();
-        resetPositions();
+        levelUp();
     }
 
     applyWrapAround(pacman); 
 }
+
+function levelUp(){
+    level += 1;
+    lives += 1;
+    currentTileMap = tileMaps[getLevelUpMapIndex()];
+    loadMap();
+    resetPositions();
+}
+
+function getLevelUpMapIndex() {
+    // Reset every 9 levels
+    if (usedMapIndices.size >= tileMaps.length) {
+        usedMapIndices.clear();
+    }
+
+    // Build pool of available indices
+    const available = tileMaps
+        .map((_, index) => index)
+        .filter(index => !usedMapIndices.has(index));
+
+    // Pick random from available
+    const index = available[Math.floor(Math.random() * available.length)];
+    usedMapIndices.add(index);
+    previousMapIndex = index; // still update this in case of game over next
+    return index;
+}
+
 
 function movePacman(e){
     // testing purposes
