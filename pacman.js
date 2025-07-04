@@ -261,6 +261,24 @@ const initialIndex = getRandomMapIndex();
 usedMapIndices.add(initialIndex);
 let currentTileMap = tileMaps[initialIndex];
 
+let scatterMode = true;
+
+const ghostBoxArea = {
+    minX: 7,
+    maxX: 11,
+    minY: 8,
+    maxY: 10
+};
+
+
+// Quadrant boundaries
+const quadrantBounds = {
+    blinky: { minX: Math.ceil(columnCount / 2), minY: 0, maxX: columnCount - 1, maxY: Math.floor(rowCount / 2) },  // Top-right
+    pinky:  { minX: 0, maxX: Math.floor(columnCount / 2) - 1, minY: 0, maxY: Math.floor(rowCount / 2) },           // Top-left
+    inky:   { minX: Math.ceil(columnCount / 2), minY: Math.ceil(rowCount / 2), maxX: columnCount - 1, maxY: rowCount - 1 }, // Bottom-right
+    clyde:  { minX: 0, maxX: Math.floor(columnCount / 2) - 1, minY: Math.ceil(rowCount / 2), maxY: rowCount - 1 }, // Bottom-left
+};
+
 function animatePacmanMouth(){
     if(!pacman) return;
 
@@ -393,18 +411,26 @@ function loadMap(){
             }
             else if (tileMapChar == 'b') { //blue ghost
                 const ghost = new Block(blueGhostImg, x, y, tileSize, tileSize, true);
+                ghost.type = 'inky';
+                ghost.scatterBounds = quadrantBounds[ghost.type];
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'o') { //orange ghost
                 const ghost = new Block(orangeGhostImg, x, y, tileSize, tileSize, true);
+                ghost.type = 'clyde';
+                ghost.scatterBounds = quadrantBounds[ghost.type];
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'p') { //pink ghost
                 const ghost = new Block(pinkGhostImg, x, y, tileSize, tileSize, true);
+                ghost.type = 'pinky';
+                ghost.scatterBounds = quadrantBounds[ghost.type];
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'r') { //red ghost
                 const ghost = new Block(redGhostImg, x, y, tileSize, tileSize, true);
+                ghost.type = 'blinky';
+                ghost.scatterBounds = quadrantBounds[ghost.type];
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'P') { //pacman
@@ -519,7 +545,7 @@ function isAtTileCenter(obj){
     return obj.x % tileSize === 0 && obj.y % tileSize === 0;
 }
 
-function getValidDirections(ghost){
+function getValidDirections(ghost, ignoreQuadrant = false){
     const dirs = [
         { name: 'U', dx: 0, dy: -1 },
         { name: 'D', dx: 0, dy: 1 },
@@ -528,10 +554,23 @@ function getValidDirections(ghost){
     ];
 
     const valid = [];
+    const bounds = ghost.scatterBounds;
 
     for (let dir of dirs){
         const nextX = ghost.x + dir.dx * tileSize;
         const nextY = ghost.y + dir.dy * tileSize;
+
+        const col = Math.floor(nextX / tileSize);
+        const row = Math.floor(nextY / tileSize);
+
+        if (scatterMode && !ignoreQuadrant) {
+            if (
+                col < bounds.minX || col > bounds.maxX ||
+                row < bounds.minY || row > bounds.maxY
+            ) {
+                continue;
+            }
+        }
 
         const temp = {...ghost,x: nextX, y:nextY};
         let hitsWall = false;
@@ -606,9 +645,168 @@ function pacmanMovement(){
     pacman.y += pacman.velocityY;
 }
 
-function ghostMovement(){
-    for (let ghost of ghosts.values()){
+function bfsFindDirection(startX, startY, targetX, targetY) {
+    const queue = [];
+    const visited = new Set();
+    const parent = {};
+    const directionsMap = {
+        'U': { dx: 0, dy: -1 },
+        'D': { dx: 0, dy: 1 },
+        'L': { dx: -1, dy: 0 },
+        'R': { dx: 1, dy: 0 },
+    };
 
+    const key = (x, y) => `${x},${y}`;
+
+    queue.push({ x: startX, y: startY });
+    visited.add(key(startX, startY));
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+
+        if (current.x === targetX && current.y === targetY) {
+            // backtrack to get first direction
+            let backtrack = key(targetX, targetY);
+            while (parent[backtrack] && parent[backtrack] !== key(startX, startY)) {
+                backtrack = parent[backtrack];
+            }
+            const [cx, cy] = backtrack.split(',').map(Number);
+            if (cx > startX) return 'R';
+            if (cx < startX) return 'L';
+            if (cy > startY) return 'D';
+            if (cy < startY) return 'U';
+            return null;
+        }
+
+        for (let dir in directionsMap) {
+            const dx = directionsMap[dir].dx;
+            const dy = directionsMap[dir].dy;
+            const nx = current.x + dx;
+            const ny = current.y + dy;
+
+            if (nx < 0 || ny < 0 || nx >= columnCount || ny >= rowCount) continue;
+            if (visited.has(key(nx, ny))) continue;
+            if (currentTileMap[ny][nx] === 'X') continue;
+
+            queue.push({ x: nx, y: ny });
+            visited.add(key(nx, ny));
+            parent[key(nx, ny)] = key(current.x, current.y);
+        }
+    }
+
+    return null;
+}
+
+
+function getGhostTargetTile(ghost){
+    const px = Math.floor(pacman.x / tileSize);
+    const py = Math.floor(pacman.y / tileSize);
+
+    // red -> pacman position
+    if (ghost.type === 'blinky'){
+        return {x: px, y: py};
+    }
+
+    // pink -> pacman position + 4 tiles infront of him
+    if (ghost.type === 'pinky'){
+        let dx = 0, dy = 0;
+        if (pacman.direction === 'U'){
+            dy = -4;
+        } else if (pacman.direction === 'D'){
+            dy = 4;
+        } else if (pacman.direction === 'L'){
+            dx = -4;
+        } else if (pacman.direction === 'R') {
+            dx = 4;
+        }
+        return { x: px + dx, y: py + dy };
+    }
+
+    // cyan -> trap pacman between blinky and itself
+    if (ghost.type === 'inky') {
+        const blinky = [...ghosts].find(g => g.type === 'blinky');
+
+        if (!blinky) return { x: px, y: py }; // fallback if Blinky not found
+
+        // 2 tiles in front of Pac-Man
+        let dx = 0, dy = 0;
+        if (pacman.direction === 'U') {
+            dx = 0;
+            dy = -2;
+        } else if (pacman.direction === 'D') {
+            dx = 0;
+            dy = 2;
+        } else if (pacman.direction === 'L') {
+            dx = -2;
+            dy = 0;
+        } else if (pacman.direction === 'R') {
+            dx = 2;
+            dy = 0;
+        }
+
+        const targetX = px + dx;
+        const targetY = py + dy;
+
+        const blinkyTileX = Math.floor(blinky.x / tileSize);
+        const blinkyTileY = Math.floor(blinky.y / tileSize);
+
+        // Vector from Blinky to target tile
+        const vx = targetX - blinkyTileX;
+        const vy = targetY - blinkyTileY;
+
+        // Double the vector
+        const finalX = blinkyTileX + 2 * vx;
+        const finalY = blinkyTileY + 2 * vy;
+
+        // Clamp the target to board bounds
+        let clampedX = Math.max(0, Math.min(columnCount - 1, finalX));
+        let clampedY = Math.max(0, Math.min(rowCount - 1, finalY));
+
+        if (currentTileMap[clampedY][clampedX] === 'X') {
+            // Try slight adjustments: right, left, down, up (in priority order)
+            const directions = [
+                { dx: 1, dy: 0 },
+                { dx: -1, dy: 0 },
+                { dx: 0, dy: 1 },
+                { dx: 0, dy: -1 }
+            ];
+
+            for (let dir of directions) {
+                const newX = clampedX + dir.dx;
+                const newY = clampedY + dir.dy;
+                // Check bounds and if it's a walkable tile
+                if (
+                    newX >= 0 && newX < columnCount &&
+                    newY >= 0 && newY < rowCount &&
+                    currentTileMap[newY][newX] !== 'X'
+                ) {
+                    clampedX = newX;
+                    clampedY = newY;
+                    break;
+                }
+            }
+        }
+        return { x: clampedX, y: clampedY };
+    }
+
+    // orange -> chase if far, random if near
+    if (ghost.type === 'clyde'){
+        const gx = ghost.x / tileSize;
+        const gy = ghost.y / tileSize;
+        const dist = Math.abs(gx - px) + Math.abs(gy - py);
+
+        if (dist >= 8) {
+            return { x: px, y: py }; // chase
+        } else {
+            return null; // signal random movement
+        }
+    }
+
+    return { x: px, y: py }; // safety net
+}
+
+function ghostMovement() {
+    for (let ghost of ghosts.values()) {
         applyWrapAround(ghost);
 
         const inBounds = (
@@ -616,28 +814,86 @@ function ghostMovement(){
             ghost.y >= 0 && ghost.y < boardHeight
         );
 
-        if(inBounds && isAtTileCenter(ghost)){
-            const validDirs = getValidDirections(ghost);
-            if(validDirs.length > 0){
-                const newDir = pickDirection(validDirs, ghost.direction);
-                ghost.updateDirection(newDir);
+        if (inBounds && isAtTileCenter(ghost)) {
+            const gx = Math.floor(ghost.x / tileSize);
+            const gy = Math.floor(ghost.y / tileSize);
+
+            const inBox = (
+                gx >= ghostBoxArea.minX && gx <= ghostBoxArea.maxX &&
+                gy >= ghostBoxArea.minY && gy <= ghostBoxArea.maxY
+            );
+
+            let direction;
+
+            if (inBox) {
+                // 🚀 Old simple random movement to get out of box
+                const validDirs = getValidDirections(ghost, true);
+                if (validDirs.length > 0) {
+                    direction = pickDirection(validDirs, ghost.direction);
+                }
+            } else if (!inBox && scatterMode) {
+                // 🎯 Quadrant limited random movement
+                const bounds = ghost.scatterBounds; // ⬅️ retrieve each ghost's scatter boundaries
+
+                const gx = Math.floor(ghost.x / tileSize);
+                const gy = Math.floor(ghost.y / tileSize);
+
+                const inQuadrant = (
+                    gx >= bounds.minX && gx <= bounds.maxX &&
+                    gy >= bounds.minY && gy <= bounds.maxY
+                );
+
+                if (!inQuadrant) {
+                    // Move towards quadrant if outside
+                    const dx = gx < bounds.minX ? 'R' : gx > bounds.maxX ? 'L' : null;
+                    const dy = gy < bounds.minY ? 'D' : gy > bounds.maxY ? 'U' : null;
+
+                    const prefer = dx ? [dx] : [];
+                    if (dy) prefer.push(dy);
+
+                    // Try preferred directions first
+                    for (let d of prefer) {
+                        if (tryDirection(ghost, d)) {
+                            direction = d;
+                            break;
+                        }
+                    }
+                }
+
+                if (!direction) {
+                    // Otherwise random movement within quadrant
+                    const validDirs = getValidDirections(ghost);
+                    if (validDirs.length > 0) {
+                        direction = pickDirection(validDirs, ghost.direction);
+                    }
+                }
+            } else if (!inBox && !scatterMode) {
+                // 🧠 Chase mode: BFS to target tile
+                const targetTile = getGhostTargetTile(ghost);
+                if (targetTile) {
+                    direction = bfsFindDirection(gx, gy, targetTile.x, targetTile.y);
+                }
+            }
+
+            if (direction) {
+                ghost.updateDirection(direction);
             }
         }
 
         ghost.x += ghost.velocityX;
         ghost.y += ghost.velocityY;
 
-        for(let wall of walls.values()){
-            if (collision(ghost, wall)){
+        for (let wall of walls.values()) {
+            if (collision(ghost, wall)) {
                 ghost.x -= ghost.velocityX;
                 ghost.y -= ghost.velocityY;
                 break;
             }
         }
 
-        if(collision(ghost, pacman)){
+        if (collision(ghost, pacman)) {
             lives -= 1;
-            if(lives == 0){
+            if (lives == 0) {
                 gameOver = true;
                 return;
             }
