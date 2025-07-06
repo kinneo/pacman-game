@@ -262,6 +262,21 @@ usedMapIndices.add(initialIndex);
 let currentTileMap = tileMaps[initialIndex];
 
 let scatterMode = true;
+const modePhases = [
+    { mode: 'scatter', duration: 7000 },
+    { mode: 'chase', duration: 20000 },
+    { mode: 'scatter', duration: 7000 },
+    { mode: 'chase', duration: 20000 },
+    { mode: 'scatter', duration: 5000 },
+    { mode: 'chase', duration: 20000 },
+    { mode: 'scatter', duration: 5000 },
+    { mode: 'chase', duration: Infinity }
+];
+let currentPhase = 0;
+let modeTimeoutID = null;
+
+let phaseStartTime = Date.now();
+
 
 const ghostBoxArea = {
     minX: 7,
@@ -270,8 +285,7 @@ const ghostBoxArea = {
     maxY: 10
 };
 
-
-// Quadrant boundaries
+// Quadrant boundaries for scatter mode
 const quadrantBounds = {
     blinky: { minX: Math.ceil(columnCount / 2), minY: 0, maxX: columnCount - 1, maxY: Math.floor(rowCount / 2) },  // Top-right
     pinky:  { minX: 0, maxX: Math.floor(columnCount / 2) - 1, minY: 0, maxY: Math.floor(rowCount / 2) },           // Top-left
@@ -358,6 +372,8 @@ window.onload = function(){
     }
     update();
     document.addEventListener("keyup", movePacman);
+
+    startModeCycle();
 }
 
 function loadImages() {
@@ -495,6 +511,19 @@ function draw(){
         context.fillText("Current Score: " + score, tileSize * 10, tileSize / 1.7);
         context.fillText("High Score: " + highScore, tileSize * 15, tileSize / 1.7);
     }
+
+    // Display current phase and timer
+    // const phase = modePhases[currentPhase];
+    // const elapsed = Date.now() - phaseStartTime;
+    // let remaining = phase.duration - elapsed;
+    // if (remaining < 0) remaining = 0;
+
+    // context.fillStyle = "yellow";
+    // context.font = "14px sans-serif";
+
+    // const displayText = `Phase ${currentPhase + 1}: ${phase.mode.toUpperCase()} | Time Left: ${phase.duration === Infinity ? '∞' : (remaining / 1000).toFixed(1) + 's'}`;
+    // context.fillText(displayText, tileSize / 2, tileSize * 1.7);
+
 }
 
 function applyWrapAround(block){
@@ -607,6 +636,23 @@ function tryDirection(block, direction) {
         }
     }
     return true;
+}
+
+function startModeCycle() {
+    if (modeTimeoutID) clearTimeout(modeTimeoutID); // clear any existing timer
+
+    const phase = modePhases[currentPhase];
+    scatterMode = (phase.mode === 'scatter');
+
+    phaseStartTime = Date.now();
+
+    if (phase.duration !== Infinity) {
+        modeTimeoutID = setTimeout(() => {
+            currentPhase++;
+            if (currentPhase >= modePhases.length) currentPhase = modePhases.length - 1; // stay at last phase
+            startModeCycle(); // recurse to next phase
+        }, phase.duration);
+    }
 }
 
 function move(){
@@ -826,14 +872,14 @@ function ghostMovement() {
             let direction;
 
             if (inBox) {
-                // 🚀 Old simple random movement to get out of box
+                // Random movement to get out of box
                 const validDirs = getValidDirections(ghost, true);
                 if (validDirs.length > 0) {
                     direction = pickDirection(validDirs, ghost.direction);
                 }
             } else if (!inBox && scatterMode) {
-                // 🎯 Quadrant limited random movement
-                const bounds = ghost.scatterBounds; // ⬅️ retrieve each ghost's scatter boundaries
+                // Scatter Mode: Quadrant limited random movement
+                const bounds = ghost.scatterBounds; 
 
                 const gx = Math.floor(ghost.x / tileSize);
                 const gy = Math.floor(ghost.y / tileSize);
@@ -852,10 +898,20 @@ function ghostMovement() {
                     if (dy) prefer.push(dy);
 
                     // Try preferred directions first
+                    let foundDirection = false;
                     for (let d of prefer) {
                         if (tryDirection(ghost, d)) {
                             direction = d;
+                            foundDirection = true;
                             break;
+                        }
+                    }
+
+                    // if cannot move towards quadrant, allow any direction
+                    if (!foundDirection) {
+                        const validDirs = getValidDirections(ghost, true);
+                        if (validDirs.length > 0) {
+                            direction = pickDirection(validDirs, ghost.direction);
                         }
                     }
                 }
@@ -868,7 +924,7 @@ function ghostMovement() {
                     }
                 }
             } else if (!inBox && !scatterMode) {
-                // 🧠 Chase mode: BFS to target tile
+                // Chase mode: BFS to target tile
                 const targetTile = getGhostTargetTile(ghost);
                 if (targetTile) {
                     direction = bfsFindDirection(gx, gy, targetTile.x, targetTile.y);
@@ -895,6 +951,8 @@ function ghostMovement() {
             lives -= 1;
             if (lives == 0) {
                 gameOver = true;
+                clearTimeout(modeTimeoutID);
+                modeTimeoutID = null;
                 return;
             }
             resetPositions();
@@ -924,6 +982,10 @@ function levelUp(){
     level += 1;
     lives += 1;
     currentTileMap = tileMaps[getLevelUpMapIndex()];
+
+    currentPhase = 0;
+    startModeCycle();
+
     loadMap();
     resetPositions();
 }
@@ -946,18 +1008,27 @@ function getLevelUpMapIndex() {
     return index;
 }
 
-
 function movePacman(e){
     // testing purposes
-    if (e.code === "KeyP") {
-        gameOver = true;
-        draw(); // update screen with Game Over text
-        return;
-    }
+    // if (e.code === "KeyP") {
+    //     gameOver = true;
+    //     draw(); // update screen with Game Over text
+    //     return;
+    // }
 
-    if(e.code === "KeyO"){
-        foods.clear();
-    }
+    // if(e.code === "KeyO"){
+    //     foods.clear();
+    // }
+
+    // // testing blinkys speed increase
+    // if (e.code === "KeyI") {
+    //     // Remove foods until only 10 remain
+    //     while (foods.size > 10) {
+    //         // Remove one arbitrary food item
+    //         const firstKey = foods.keys().next().value;
+    //         foods.delete(firstKey);
+    //     }
+    // }
 
     if(gameOver){
         currentTileMap = tileMaps[getRandomMapIndex()];
@@ -1021,6 +1092,10 @@ function resetPositions(){
     pacman.reset();
     pacman.velocityX = 0;
     pacman.velocityY = 0;
+
+    currentPhase = 0;
+    startModeCycle();
+
     for (let ghost of ghosts.values()){
         ghost.reset();
         const newDirection = directions[Math.floor(Math.random()*4)];
@@ -1028,23 +1103,21 @@ function resetPositions(){
     }
 }
 
-function getGhostSpeed(level) {
-    // if (level >= 7) return tileSize / 2; 
-    // if (level >= 4) return tileSize / 4; 
-    return tileSize / 8; 
+function getGhostSpeed(level, ghost, foods) {
+    const remainingFood = foods.size;
+
+    if (ghost.type === 'blinky') {
+        if (level >= 5) {
+            if (remainingFood <= 20) return tileSize / 4; 
+        } else if (level >= 2) {
+            if (remainingFood <= 15) return tileSize / 4; 
+        } else {
+            if (remainingFood <= 10) return tileSize / 4; 
+        }
+    }
+
+    return tileSize / 8; // default speed for all others
 }
-
-// function getGhostSpeed(level) {
-//     const baseSpeed = tileSize / 8; // starting speed
-//     const speedMultiplier = 1.05 ** (level - 1); // exponential growth
-//     return baseSpeed * speedMultiplier;
-// }
-
-// function getGhostSpeed(level) {
-//     const baseSpeed = tileSize / 8;       // starting speed
-//     const increment = tileSize / 80;      // how much to increase per level (adjust as needed)
-//     return baseSpeed; // + (level - 1) * increment;
-// }
 
 class Block{
     constructor(image,x,y,width,height, isGhost = false){
@@ -1086,7 +1159,7 @@ class Block{
 
     updateVelocity() {
 
-        const speed = this.isGhost ? getGhostSpeed(level) : tileSize/4;
+        const speed = this.isGhost ? getGhostSpeed(level, this, foods) : tileSize/4;
 
         if (this.direction == 'U') {
             this.velocityX = 0;
