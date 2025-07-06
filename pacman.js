@@ -691,6 +691,11 @@ function pacmanMovement(){
     pacman.y += pacman.velocityY;
 }
 
+function isTunnelRow(row) {
+    // Check if the row has 'O' tiles (skip/tunnel)
+    return currentTileMap[row].includes('O');
+}
+
 function bfsFindDirection(startX, startY, targetX, targetY) {
     const queue = [];
     const visited = new Set();
@@ -727,10 +732,45 @@ function bfsFindDirection(startX, startY, targetX, targetY) {
         for (let dir in directionsMap) {
             const dx = directionsMap[dir].dx;
             const dy = directionsMap[dir].dy;
-            const nx = current.x + dx;
-            const ny = current.y + dy;
+            let nx = current.x + dx;
+            let ny = current.y + dy;
 
-            if (nx < 0 || ny < 0 || nx >= columnCount || ny >= rowCount) continue;
+            //if (nx < 0 || ny < 0 || nx >= columnCount || ny >= rowCount) continue;
+            // if (ny >= 0 && ny < rowCount && isTunnelRow(ny)) {
+            //     if (nx < 0) nx = columnCount - 1;
+            //     else if (nx >= columnCount) nx = 0;
+            // }
+            // if (nx < 0 || nx >= columnCount || ny < 0 || ny >= rowCount) continue;
+            // Wrap around horizontally ONLY if current row is a tunnel row
+            // Hardcode wraparound only on 'O' tiles
+            // const currentRow = currentTileMap[current.y];
+            // if (currentRow.includes('O')) {
+            //     // If moving left off the map from an 'O' tile
+            //     if (nx < 0 && currentRow[columnCount - 1] === 'O') {
+            //         nx = columnCount - 1;
+            //     }
+            //     // If moving right off the map from an 'O' tile
+            //     else if (nx >= columnCount && currentRow[0] === 'O') {
+            //         nx = 0;
+            //     }
+            // } else {
+            //     // If not an 'O' tunnel row, prevent out of bounds horizontally
+            //     if (nx < 0 || nx >= columnCount) continue;
+            // }
+            // Wrap horizontally on tunnel rows
+            if (ny >= 0 && ny < rowCount && isTunnelRow(ny)) {
+                if (nx < 0) nx = columnCount - 1;
+                else if (nx >= columnCount) nx = 0;
+            } else {
+                // If not a tunnel row, prevent out of bounds horizontally
+                if (nx < 0 || nx >= columnCount) continue;
+            }
+
+            // Check vertical bounds
+            if (ny < 0 || ny >= rowCount) continue;
+
+
+
             if (visited.has(key(nx, ny))) continue;
             if (currentTileMap[ny][nx] === 'X') continue;
 
@@ -844,7 +884,27 @@ function getGhostTargetTile(ghost){
         if (dist >= 8) {
             return { x: px, y: py }; // chase
         } else {
-            return null; // signal random movement
+            let oppositeX = (gx < columnCount / 2) ? columnCount - 1 : 0;
+            let oppositeY = (gy < rowCount / 2) ? rowCount - 1 : 0;
+
+            // Clamp within map bounds
+            oppositeX = Math.max(0, Math.min(columnCount - 1, oppositeX));
+            oppositeY = Math.max(0, Math.min(rowCount - 1, oppositeY));
+
+            // If opposite tile is a wall, fallback to a random tile in his scatter quadrant
+            if (currentTileMap[oppositeY][oppositeX] === 'X') {
+                const bounds = ghost.scatterBounds;
+                let randomX, randomY;
+
+                do {
+                    randomX = Math.floor(Math.random() * (bounds.maxX - bounds.minX + 1)) + bounds.minX;
+                    randomY = Math.floor(Math.random() * (bounds.maxY - bounds.minY + 1)) + bounds.minY;
+                } while (currentTileMap[randomY][randomX] === 'X');
+
+                return { x: randomX, y: randomY };
+            }
+
+            return { x: oppositeX, y: oppositeY };
         }
     }
 
@@ -928,6 +988,13 @@ function ghostMovement() {
                 const targetTile = getGhostTargetTile(ghost);
                 if (targetTile) {
                     direction = bfsFindDirection(gx, gy, targetTile.x, targetTile.y);
+                    if (!direction) {
+                        // Fallback: pick any valid direction if BFS fails
+                        const validDirs = getValidDirections(ghost, true);
+                        if (validDirs.length > 0) {
+                            direction = pickDirection(validDirs, ghost.direction);
+                        }
+                    }
                 }
             }
 
