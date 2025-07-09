@@ -1164,7 +1164,8 @@ function resetPositions(){
     startModeCycle();
 
     for (let ghost of ghosts.values()){
-        ghost.reset();
+        ghost.x = ghost.startX;
+        ghost.y = ghost.startY;
         const newDirection = directions[Math.floor(Math.random()*4)];
         ghost.updateDirection(newDirection);
     }
